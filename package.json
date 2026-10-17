@@ -1,0 +1,27 @@
+{
+  "name": "creamy-cup-sales-and-inventory-management-system",
+  "version": "1.0.0",
+  "description": "dbms-sia-final-project",
+  "keywords": [
+    "dbms",
+    "sia"
+  ],
+  "homepage": "https://github.com/oxcymoni/CREAMY-CUP-SALES-AND-INVENTORY-MANAGEMENT-SYSTEM#readme",
+  "bugs": {
+    "url": "https://github.com/oxcymoni/CREAMY-CUP-SALES-AND-INVENTORY-MANAGEMENT-SYSTEM/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oxcymoni/CREAMY-CUP-SALES-AND-INVENTORY-MANAGEMENT-SYSTEM.git"
+  },
+  "license": "ISC",
+  "author": "Villanueva, Raymond Jay",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}
