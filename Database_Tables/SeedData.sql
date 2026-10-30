@@ -73,4 +73,50 @@ VALUES
 INSERT INTO sales
 (sale_id, customer_id, user_id, sale_date, total_amount, status)
 VALUES
-(1, 1, 1, '2026-11-03 
+(1, 1, 1, '2026-11-03 09:30:00', 325.00, 'Completed');
+
+INSERT INTO sale_details
+(sale_detail_id, sale_id, product_id, quantity, unit_price, subtotal)
+VALUES
+(1, 1, 1, 2, 120.00, 240.00),
+(2, 1, 4, 1, 85.00, 85.00);
+
+INSERT INTO rentals
+(rental_id, customer_id, user_id, equipment_id, rate_id, start_time, end_time, total_amount, status)
+VALUES
+(1, 2, 1, 1, 1, '2026-11-03 10:00:00', '2026-11-03 11:00:00', 150.00, 'Completed');
+
+INSERT INTO purchases
+(purchase_id, supplier_id, user_id, purchase_date, total_cost, status)
+VALUES
+(1, 2, 2, '2026-11-03 11:00:00', 50.00, 'Pending');
+
+INSERT INTO purchase_details
+(purchase_detail_id, purchase_id, inventory_id, quantity, unit_cost)
+VALUES
+(1, 1, 2, 500.00, 0.10);
+
+INSERT INTO stock_movements
+(movement_id, inventory_id, user_id, movement_type, quantity, movement_date)
+VALUES
+(1, 1, 2, 'IN', 500.00, '2026-11-03 08:00:00'),
+(2, 2, 2, 'IN', 1000.00, '2026-11-03 08:00:00'),
+(3, 3, 2, 'IN', 200.00, '2026-11-03 08:00:00'),
+(4, 4, 2, 'IN', 50.00, '2026-11-03 08:00:00'),
+(5, 5, 2, 'IN', 13.00, '2026-11-03 08:00:00'),
+(6, 1, 1, 'OUT', 40.00, '2026-11-03 09:30:00'),
+(7, 2, 1, 'OUT', 300.00, '2026-11-03 09:30:00'),
+(8, 3, 1, 'OUT', 40.00, '2026-11-03 09:30:00'),
+(9, 4, 1, 'OUT', 2.00, '2026-11-03 09:30:00'),
+(10, 5, 1, 'OUT', 1.00, '2026-11-03 09:30:00');
+
+INSERT INTO stock_alerts
+(alert_id, inventory_id, alert_date, alert_message, alert_status)
+VALUES
+(1, 3, '2026-11-03 10:00:00', 'Vanilla Syrup is below reorder level', 'Unresolved');
+
+INSERT INTO payments
+(payment_id, sale_id, rental_id, amount, payment_method, payment_date)
+VALUES
+(1, 1, NULL, 325.00, 'Cash', '2026-11-03 09:30:00'),
+(2, NULL, 1, 150.00, 'GCash', '2026-11-03 11:00:00');
