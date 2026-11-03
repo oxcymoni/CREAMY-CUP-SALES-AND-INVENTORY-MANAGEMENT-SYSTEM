@@ -5,13 +5,12 @@ const ReportModel = {
     const sql = `
       SELECT
         s.sale_id,
-        c.customer_name,
+        COALESCE(c.customer_name, 'Walk-in / Guest') AS customer_name,
         s.sale_date,
         s.total_amount,
         s.status
-      FROM Sales s
-      INNER JOIN Customers c
-      ON s.customer_id = c.customer_id
+      FROM sales s
+      LEFT JOIN customers c ON s.customer_id = c.customer_id
       ORDER BY s.sale_date DESC
     `;
     db.query(sql, callback);
@@ -21,13 +20,12 @@ const ReportModel = {
     const sql = `
       SELECT
         p.purchase_id,
-        s.supplier_name,
+        COALESCE(sp.supplier_name, 'N/A') AS supplier_name,
         p.purchase_date,
         p.total_cost,
         p.status
-      FROM Purchase p
-      INNER JOIN Suppliers s
-      ON p.supplier_id = s.supplier_id
+      FROM purchases p
+      LEFT JOIN suppliers sp ON p.supplier_id = sp.supplier_id
       ORDER BY p.purchase_date DESC
     `;
     db.query(sql, callback);
@@ -41,7 +39,7 @@ const ReportModel = {
         unit,
         quantity_on_hand,
         reorder_level
-      FROM Inventory
+      FROM inventory
     `;
     db.query(sql, callback);
   },
@@ -53,7 +51,7 @@ const ReportModel = {
         item_name,
         quantity_on_hand,
         reorder_level
-      FROM Inventory
+      FROM inventory
       WHERE quantity_on_hand <= reorder_level
     `;
     db.query(sql, callback);
@@ -67,9 +65,8 @@ const ReportModel = {
         sa.alert_date,
         sa.alert_message,
         sa.alert_status
-      FROM Stock_Alerts sa
-      INNER JOIN Inventory i
-      ON sa.inventory_id = i.inventory_id
+      FROM stock_alerts sa
+      INNER JOIN inventory i ON sa.inventory_id = i.inventory_id
       ORDER BY sa.alert_date DESC
     `;
     db.query(sql, callback);
@@ -84,7 +81,7 @@ const ReportModel = {
         amount,
         payment_method,
         payment_date
-      FROM Payments
+      FROM payments
       ORDER BY payment_date DESC
     `;
     db.query(sql, callback);
