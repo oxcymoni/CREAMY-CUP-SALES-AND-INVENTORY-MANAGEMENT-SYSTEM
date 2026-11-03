@@ -1,4 +1,5 @@
 const Model = require("../models/uniquefeatureModels");
+const db = require("../config/db");
 
 const Controller = {
   getInventory: (req, res) => {
@@ -35,9 +36,67 @@ const Controller = {
   updateInventory: (req, res) => {
     if (!req.body.item_name)
       return res.status(400).json({ message: "item_name is required" });
+
     Model.updateInventory(req.params.id, req.body, (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.status(200).json({ message: "Inventory item updated successfully" });
+
+      const qty = parseFloat(req.body.quantity_on_hand) || 0;
+      const reorder = parseFloat(req.body.reorder_level) || 0;
+      const itemName = req.body.item_name;
+      const inventoryId = req.params.id;
+
+      if (qty <= reorder) {
+        // Stock is LOW — check if an Unresolved alert already exists
+        const checkSql = `
+          SELECT alert_id FROM stock_alerts
+          WHERE inventory_id = ? AND alert_status = 'Unresolved'
+          LIMIT 1
+        `;
+        db.query(checkSql, [inventoryId], (checkErr, existing) => {
+          if (checkErr) {
+            // Alert check failed but inventory was saved — still return success
+            return res
+              .status(200)
+              .json({ message: "Inventory item updated successfully" });
+          }
+
+          if (existing.length === 0) {
+            // No existing alert — insert a new Unresolved alert
+            const insertSql = `
+              INSERT INTO stock_alerts (inventory_id, alert_date, alert_message, alert_status)
+              VALUES (?, NOW(), ?, 'Unresolved')
+            `;
+            db.query(
+              insertSql,
+              [inventoryId, `${itemName} is below reorder level`],
+              () => {
+                // ✅ Response sent AFTER alert is inserted
+                res
+                  .status(200)
+                  .json({ message: "Inventory item updated successfully" });
+              },
+            );
+          } else {
+            // Unresolved alert already exists — no duplicate needed
+            res
+              .status(200)
+              .json({ message: "Inventory item updated successfully" });
+          }
+        });
+      } else {
+        // Stock is SUFFICIENT — resolve any existing Unresolved alert
+        const resolveSql = `
+          UPDATE stock_alerts
+          SET alert_status = 'Resolved'
+          WHERE inventory_id = ? AND alert_status = 'Unresolved'
+        `;
+        db.query(resolveSql, [inventoryId], () => {
+          // ✅ Response sent AFTER alert is resolved
+          res
+            .status(200)
+            .json({ message: "Inventory item updated successfully" });
+        });
+      }
     });
   },
 
