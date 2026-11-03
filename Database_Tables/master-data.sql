@@ -1,17 +1,17 @@
-CREATE TABLE Suppliers (
+CREATE TABLE suppliers (
     supplier_id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_name VARCHAR(150) NOT NULL,
     contact_number VARCHAR(20),
     address VARCHAR(255)
 );
 
-CREATE TABLE Categories (
+CREATE TABLE categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(100) NOT NULL,
     description VARCHAR(255)
 );
 
-CREATE TABLE Products (
+CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT NOT NULL,
     product_name VARCHAR(150) NOT NULL,
