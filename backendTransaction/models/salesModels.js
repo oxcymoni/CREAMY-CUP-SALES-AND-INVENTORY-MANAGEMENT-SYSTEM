@@ -1,188 +1,186 @@
 const db = require("../config/db");
 
 const Model = {
-
   getSales: (callback) => {
-    const sql = "SELECT * FROM Sales";
+    const sql = "SELECT * FROM sales ORDER BY sale_date DESC";
     db.query(sql, callback);
   },
 
   getSaleById: (id, callback) => {
-    const sql = "SELECT * FROM Sales WHERE sale_id = ?";
+    const sql = "SELECT * FROM sales WHERE sale_id = ?";
     db.query(sql, [id], callback);
   },
 
   addSale: (data, callback) => {
     let total_amount = 0;
     if (data.items && data.items.length > 0) {
-      total_amount = data.items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
+      total_amount = data.items.reduce(
+        (total, item) => total + item.quantity * item.unit_price,
+        0,
+      );
     } else {
       total_amount = data.total_amount || 0;
     }
 
+    let saleDate = data.sale_date;
+    if (!saleDate || saleDate instanceof Date) {
+      const d = saleDate ? new Date(saleDate) : new Date();
+      saleDate = d.toISOString().slice(0, 19).replace("T", " ");
+    } else if (typeof saleDate === "string" && saleDate.includes("T")) {
+      saleDate = saleDate.slice(0, 19).replace("T", " ");
+    }
+
     const saleSql = `
-      INSERT INTO Sales (customer_id, user_id, sale_date, total_amount, status)
+      INSERT INTO sales (customer_id, user_id, sale_date, total_amount, status)
       VALUES (?, ?, ?, ?, ?)
     `;
-    
-    db.query(saleSql, [
-      data.customer_id,
-      data.user_id,
-      data.sale_date,
-      total_amount,
-      data.status || 'Completed'
-    ], (err, saleResult) => {
-      if (err) return callback(err, null);
-      
-      const sale_id = saleResult.insertId;
 
-      // If there is a payment, insert it
-      if (data.payment_method && data.amount) {
-        const paymentSql = `
-          INSERT INTO Payments (sale_id, rental_id, amount, payment_method, payment_date)
-          VALUES (?, ?, ?, ?, ?)
-        `;
-        db.query(paymentSql, [
-          sale_id,
-          data.rental_id || null,
-          data.amount,
-          data.payment_method,
-          data.payment_date || new Date()
-        ], (paymentErr) => {
-          if (paymentErr) return callback(paymentErr, null);
-          callback(null, { sale_id, total_amount });
-        });
-      } else {
-        callback(null, { sale_id, total_amount });
-      }
-    });
+    db.query(
+      saleSql,
+      [
+        data.customer_id,
+        data.user_id,
+        saleDate,
+        total_amount,
+        data.status || "Completed",
+      ],
+      (err, saleResult) => {
+        if (err) return callback(err, null);
+        callback(null, { sale_id: saleResult.insertId, total_amount });
+      },
+    );
   },
 
   updateSale: (id, data, callback) => {
     const sql = `
-      UPDATE Sales
+      UPDATE sales
       SET customer_id = ?, user_id = ?, sale_date = ?, total_amount = ?, status = ?
       WHERE sale_id = ?
     `;
     db.query(
       sql,
-      [data.customer_id, data.user_id, data.sale_date, data.total_amount, data.status, id],
-      callback
+      [
+        data.customer_id,
+        data.user_id,
+        data.sale_date,
+        data.total_amount,
+        data.status,
+        id,
+      ],
+      callback,
     );
   },
 
   deleteSale: (id, callback) => {
-    const sql = "DELETE FROM Sales WHERE sale_id = ?";
+    const sql = "DELETE FROM sales WHERE sale_id = ?";
     db.query(sql, [id], callback);
   },
 
-  getPayments: (callback) => {
-    const sql = "SELECT * FROM Payments";
+  getRentalLogs: (callback) => {
+    const sql = `
+      SELECT r.*, eq.equipment_name, c.customer_name, u.username
+      FROM rentals r
+      LEFT JOIN rental_equipment eq ON r.equipment_id = eq.equipment_id
+      LEFT JOIN customers c ON r.customer_id = c.customer_id
+      LEFT JOIN users u ON r.user_id = u.user_id
+      ORDER BY r.rental_id DESC
+    `;
     db.query(sql, callback);
   },
 
-  getPaymentById: (id, callback) => {
-    const sql = "SELECT * FROM Payments WHERE payment_id = ?";
+  getRentalLogById: (id, callback) => {
+    const sql = "SELECT * FROM rentals WHERE rental_id = ?";
     db.query(sql, [id], callback);
   },
 
-  addPayment: (data, callback) => {
+  createRentalLog: (data, callback) => {
     const sql = `
-      INSERT INTO Payments (sale_id, rental_id, amount, payment_method, payment_date)
+      INSERT INTO rentals (customer_id, user_id, equipment_id, rate_id, start_time, end_time, total_amount, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    db.query(
+      sql,
+      [
+        data.customer_id,
+        data.user_id,
+        data.equipment_id,
+        data.rate_id,
+        data.start_time || new Date(),
+        data.end_time || null,
+        data.total_amount || 0,
+        data.status || "Active",
+      ],
+      callback,
+    );
+  },
+
+  updateRentalLog: (id, data, callback) => {
+    const sql = `
+      UPDATE rentals
+      SET customer_id = ?, user_id = ?, equipment_id = ?, rate_id = ?, start_time = ?, end_time = ?, total_amount = ?, status = ?
+      WHERE rental_id = ?
+    `;
+    db.query(
+      sql,
+      [
+        data.customer_id,
+        data.user_id,
+        data.equipment_id,
+        data.rate_id,
+        data.start_time,
+        data.end_time,
+        data.total_amount,
+        data.status,
+        id,
+      ],
+      callback,
+    );
+  },
+
+  deleteRentalLog: (id, callback) => {
+    const sql = "DELETE FROM rentals WHERE rental_id = ?";
+    db.query(sql, [id], callback);
+  },
+
+  getStockMovements: (callback) => {
+    const sql = `
+      SELECT sm.*, i.item_name, u.username
+      FROM stock_movements sm
+      LEFT JOIN inventory i ON sm.inventory_id = i.inventory_id
+      LEFT JOIN users u ON sm.user_id = u.user_id
+      ORDER BY sm.movement_id DESC
+    `;
+    db.query(sql, callback);
+  },
+
+  addStockMovement: (data, callback) => {
+    const sql = `
+      INSERT INTO stock_movements (inventory_id, user_id, movement_type, quantity, movement_date)
       VALUES (?, ?, ?, ?, ?)
     `;
     db.query(
       sql,
-      [data.sale_id || null, data.rental_id || null, data.amount, data.payment_method, data.payment_date],
-      callback
+      [
+        data.inventory_id,
+        data.user_id,
+        data.movement_type,
+        data.quantity,
+        data.movement_date || new Date(),
+      ],
+      callback,
     );
   },
 
-  updatePayment: (id, data, callback) => {
+  getPurchaseHistory: (callback) => {
     const sql = `
-      UPDATE Payments
-      SET sale_id = ?, rental_id = ?, amount = ?, payment_method = ?, payment_date = ?
-      WHERE payment_id = ?
-    `;
-    db.query(
-      sql,
-      [data.sale_id || null, data.rental_id || null, data.amount, data.payment_method, data.payment_date, id],
-      callback
-    );
-  },
-
-  deletePayment: (id, callback) => {
-    const sql = "DELETE FROM Payments WHERE payment_id = ?";
-    db.query(sql, [id], callback);
-  },
-
-  getInnerJoinReport: (callback) => {
-    const sql = `
-      SELECT
-        s.sale_id,
-        s.sale_date,
-        c.customer_id,
-        u.user_id,
-        p.product_id,
-        sd.quantity,
-        sd.unit_price,
-        sd.subtotal,
-        s.total_amount,
-        pay.payment_method,
-        pay.amount AS payment_amount,
-        s.status
-      FROM Sales s
-      INNER JOIN Sale_Details sd ON s.sale_id = sd.sale_id
-      INNER JOIN Products p ON sd.product_id = p.product_id
-      INNER JOIN Customers c ON s.customer_id = c.customer_id
-      INNER JOIN Users u ON s.user_id = u.user_id
-      INNER JOIN Payments pay ON s.sale_id = pay.sale_id
-      ORDER BY s.sale_date DESC;
+      SELECT p.*, s.supplier_name, u.username
+      FROM purchases p
+      LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+      LEFT JOIN users u ON p.user_id = u.user_id
+      ORDER BY p.purchase_date DESC
     `;
     db.query(sql, callback);
   },
-
-  getLeftJoinReport: (callback) => {
-    const sql = `
-      SELECT
-        s.sale_id,
-        s.sale_date,
-        s.customer_id,
-        s.total_amount,
-        pay.payment_method,
-        pay.amount AS payment_amount
-      FROM Sales s
-      LEFT JOIN Customers c ON s.customer_id = c.customer_id
-      LEFT JOIN Payments pay ON s.sale_id = pay.sale_id
-      ORDER BY s.sale_date DESC;
-    `;
-    db.query(sql, callback);
-  },
-
-  getFullOuterJoinReport: (callback) => {
-    const sql = `
-      SELECT
-        s.sale_id,
-        s.total_amount,
-        pay.payment_id,
-        pay.amount AS payment_amount,
-        'Sale / Matched' AS record_type
-      FROM Sales s
-      LEFT JOIN Payments pay ON s.sale_id = pay.sale_id
-
-      UNION
-
-      SELECT
-        s.sale_id,
-        s.total_amount,
-        pay.payment_id,
-        pay.amount AS payment_amount,
-        'Payment Only' AS record_type
-      FROM Sales s
-      RIGHT JOIN Payments pay ON s.sale_id = pay.sale_id;
-    `;
-    db.query(sql, callback);
-  }
 };
 
 module.exports = Model;
