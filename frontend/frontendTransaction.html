@@ -272,7 +272,6 @@
         return isNaN(d.getTime()) ? val : d.toLocaleString();
       }
 
-      // value for <input type="datetime-local">
       function toInputDateTime(val) {
         if (!val) return "";
         const d = new Date(val);
@@ -281,7 +280,6 @@
         return d.toISOString().slice(0, 16);
       }
 
-      // value for the backend ("YYYY-MM-DD HH:mm:ss", local time)
       function toSqlDateTime(val) {
         const s = toInputDateTime(val);
         return s ? s.replace("T", " ") + ":00" : null;
@@ -598,7 +596,6 @@
           payload = {
             customer_id:    parseInt(cid),
             user_id:        currentUser?.user_id || 1,
-            // keep the original sale date when editing, use "now" when adding
             sale_date:      toSqlDateTime(editingRecord?.sale_date || new Date()),
             total_amount:   parseFloat(document.getElementById("f_total_amount").value) || 0,
             payment_method: document.getElementById("f_payment_method").value,
