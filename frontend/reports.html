@@ -138,7 +138,7 @@
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 12px;
+        margin-top: 8px;
       }
       th,
       td {
@@ -152,20 +152,6 @@
         font-weight: 600;
         color: var(--muted);
       }
-      .badge {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.78rem;
-        font-weight: 700;
-      }
-      .badge.success {
-        background: #e8f6ee;
-        color: var(--success);
-      }
-      .badge.danger {
-        background: #fdecea;
-        color: var(--danger);
-      }
     </style>
   </head>
   <body>
@@ -173,7 +159,7 @@
       <div style="display: flex; align-items: center">
         <div class="brand-title">
           <img
-            src="images/877442919_3576822949161145_9124776466578456126_n.jpg"
+            src="images/logo.jpg"
             alt="Logo"
             onerror="this.style.display = 'none'"
           />
@@ -195,36 +181,28 @@
 
     <main>
       <nav class="tabs">
-        <button class="tab-btn active" onclick="switchReportTab('sales')">
-          Sales Report
+        <button
+          class="tab-btn active"
+          onclick="switchReportTab(event, 'sales')"
+        >
+          Daily Sales Report
         </button>
-        <button class="tab-btn" onclick="switchReportTab('purchases')">
-          Purchase History
+        <button class="tab-btn" onclick="switchReportTab(event, 'purchases')">
+          Purchase Reports
         </button>
-        <button class="tab-btn" onclick="switchReportTab('inventory')">
-          Inventory Summary
+        <button class="tab-btn" onclick="switchReportTab(event, 'rentals')">
+          Rental Reports
         </button>
-        <button class="tab-btn" onclick="switchReportTab('low-stock')">
-          Low Stock
-        </button>
-        <button class="tab-btn" onclick="switchReportTab('stock-alerts')">
-          Stock Alerts
-        </button>
-        <button class="tab-btn" onclick="switchReportTab('payments')">
-          Payments
+        <button class="tab-btn" onclick="switchReportTab(event, 'payments')">
+          Payments Report
         </button>
       </nav>
 
       <section class="content-card">
         <div class="action-bar">
-          <h3 id="reportTitle">Sales Report</h3>
+          <h3 id="reportTitle">Daily Sales Report</h3>
         </div>
-        <div style="overflow-x: auto">
-          <table>
-            <thead id="tableHead"></thead>
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
+        <div id="reportContainer" style="overflow-x: auto"></div>
       </section>
     </main>
 
@@ -252,20 +230,18 @@
         window.location.href = "login.html";
       });
 
-      function switchReportTab(tab) {
+      function switchReportTab(evt, tab) {
         currentReport = tab;
         document
           .querySelectorAll(".tab-btn")
           .forEach((b) => b.classList.remove("active"));
-        if (event && event.target) event.target.classList.add("active");
+        if (evt && evt.target) evt.target.classList.add("active");
 
         const titles = {
-          sales: "Sales Report",
-          purchases: "Purchase History Report",
-          inventory: "Inventory Summary Report",
-          "low-stock": "Low Stock Report",
-          "stock-alerts": "Stock Alerts Report",
-          payments: "Payments Report",
+          sales: "Daily Sales Report",
+          purchases: "Purchase History Report (Expenses)",
+          rentals: "Equipment Rental Report (Revenue)",
+          payments: "Payment Transaction Records",
         };
         document.getElementById("reportTitle").textContent =
           titles[tab] || "Reports";
@@ -273,103 +249,190 @@
       }
 
       async function loadReportData() {
-        const tbody = document.getElementById("tableBody");
-        const thead = document.getElementById("tableHead");
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Loading report data...</td></tr>`;
+        const container = document.getElementById("reportContainer");
+        container.innerHTML = `<p style="text-align:center; padding: 20px;">Loading report data...</p>`;
 
         try {
-          const res = await fetch(`${API_BASE}/${currentReport}`);
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Failed to load report");
-          renderReportTable(data);
+          if (currentReport === "sales") {
+            const res = await fetch(`${API_BASE}/sales`);
+            const data = await res.json();
+            if (!res.ok)
+              throw new Error(data.error || "Failed to load sales report");
+            renderSalesReport(data);
+          } else if (currentReport === "purchases") {
+            const res = await fetch(`${API_BASE}/purchases`);
+            const data = await res.json();
+            if (!res.ok)
+              throw new Error(data.error || "Failed to load purchases report");
+            renderPurchasesReport(data);
+          } else if (currentReport === "rentals") {
+            const res = await fetch(`${API_BASE}/rentals`);
+            const data = await res.json();
+            if (!res.ok)
+              throw new Error(data.error || "Failed to load rentals report");
+            renderRentalsReport(data);
+          } else if (currentReport === "payments") {
+            const res = await fetch(`${API_BASE}/payments`);
+            const data = await res.json();
+            if (!res.ok)
+              throw new Error(data.error || "Failed to load payments report");
+            renderPaymentsReport(data);
+          }
         } catch (err) {
-          tbody.innerHTML = `<tr><td colspan="8" style="color:var(--danger); text-align:center;">${err.message}</td></tr>`;
+          container.innerHTML = `<p style="color:var(--danger); text-align:center; padding: 20px;">${err.message}</p>`;
         }
       }
 
-      function renderReportTable(data) {
-        const tbody = document.getElementById("tableBody");
-        const thead = document.getElementById("tableHead");
-        tbody.innerHTML = "";
-
+      function renderSalesReport(data) {
+        const container = document.getElementById("reportContainer");
         if (!Array.isArray(data) || data.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No records found.</td></tr>`;
+          container.innerHTML = `<p style="text-align:center; padding: 20px;">No sales records found.</p>`;
           return;
         }
 
-        if (currentReport === "sales") {
-          thead.innerHTML = `<tr><th>Sale ID</th><th>Customer Name</th><th>Sale Date</th><th>Total Amount</th><th>Status</th></tr>`;
-          data.forEach((item) => {
-            tbody.innerHTML += `
+        let html = `
+          <table>
+            <thead>
               <tr>
-                <td><strong>#${item.sale_id}</strong></td>
-                <td>${item.customer_name}</td>
-                <td>${item.sale_date ? new Date(item.sale_date).toLocaleString() : "-"}</td>
-                <td>₱${parseFloat(item.total_amount || 0).toFixed(2)}</td>
-                <td><span class="badge success">${item.status}</span></td>
-              </tr>`;
-          });
-        } else if (currentReport === "purchases") {
-          thead.innerHTML = `<tr><th>Purchase ID</th><th>Supplier Name</th><th>Purchase Date</th><th>Total Cost</th><th>Status</th></tr>`;
-          data.forEach((item) => {
-            tbody.innerHTML += `
-              <tr>
-                <td><strong>#${item.purchase_id}</strong></td>
-                <td>${item.supplier_name}</td>
-                <td>${item.purchase_date ? new Date(item.purchase_date).toLocaleString() : "-"}</td>
-                <td>₱${parseFloat(item.total_cost || 0).toFixed(2)}</td>
-                <td><span class="badge success">${item.status}</span></td>
-              </tr>`;
-          });
-        } else if (currentReport === "inventory") {
-          thead.innerHTML = `<tr><th>Inventory ID</th><th>Item Name</th><th>Unit</th><th>Quantity On Hand</th><th>Reorder Level</th></tr>`;
-          data.forEach((item) => {
-            tbody.innerHTML += `
-              <tr>
-                <td><strong>#${item.inventory_id}</strong></td>
-                <td>${item.item_name}</td>
-                <td>${item.unit || "-"}</td>
-                <td>${item.quantity_on_hand}</td>
-                <td>${item.reorder_level}</td>
-              </tr>`;
-          });
-        } else if (currentReport === "low-stock") {
-          thead.innerHTML = `<tr><th>Inventory ID</th><th>Item Name</th><th>Quantity On Hand</th><th>Reorder Level</th></tr>`;
-          data.forEach((item) => {
-            tbody.innerHTML += `
-              <tr>
-                <td><strong>#${item.inventory_id}</strong></td>
-                <td>${item.item_name}</td>
-                <td><span class="badge danger">${item.quantity_on_hand}</span></td>
-                <td>${item.reorder_level}</td>
-              </tr>`;
-          });
-        } else if (currentReport === "stock-alerts") {
-          thead.innerHTML = `<tr><th>Alert ID</th><th>Item Name</th><th>Alert Date</th><th>Message</th><th>Status</th></tr>`;
-          data.forEach((item) => {
-            tbody.innerHTML += `
-              <tr>
-                <td><strong>#${item.alert_id}</strong></td>
-                <td>${item.item_name}</td>
-                <td>${item.alert_date ? new Date(item.alert_date).toLocaleString() : "-"}</td>
-                <td>${item.alert_message}</td>
-                <td><span class="badge danger">${item.alert_status}</span></td>
-              </tr>`;
-          });
-        } else if (currentReport === "payments") {
-          thead.innerHTML = `<tr><th>Payment ID</th><th>Sale ID</th><th>Rental ID</th><th>Amount</th><th>Method</th><th>Date</th></tr>`;
-          data.forEach((item) => {
-            tbody.innerHTML += `
-              <tr>
-                <td><strong>#${item.payment_id}</strong></td>
-                <td>${item.sale_id ? `#${item.sale_id}` : "-"}</td>
-                <td>${item.rental_id ? `#${item.rental_id}` : "-"}</td>
-                <td>₱${parseFloat(item.amount || 0).toFixed(2)}</td>
-                <td>${item.payment_method}</td>
-                <td>${item.payment_date ? new Date(item.payment_date).toLocaleString() : "-"}</td>
-              </tr>`;
-          });
+                <th>Date</th>
+                <th>Total Transactions</th>
+                <th>Total Sales Revenue</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        data.forEach((item) => {
+          const rawDate = item.sale_date || item.sales_date;
+          const dateFormatted = rawDate
+            ? new Date(rawDate).toLocaleDateString()
+            : "-";
+          const transactionCount =
+            item.total_transactions || item.transaction_count || 1;
+          const totalSales = parseFloat(
+            item.total_amount || item.total_sales || 0,
+          ).toFixed(2);
+
+          html += `
+            <tr>
+              <td><strong>${dateFormatted}</strong></td>
+              <td>${transactionCount}</td>
+              <td>₱${totalSales}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      }
+
+      function renderPurchasesReport(purchases) {
+        const container = document.getElementById("reportContainer");
+        if (!Array.isArray(purchases) || purchases.length === 0) {
+          container.innerHTML = `<p style="text-align:center; padding: 20px;">No purchase records found.</p>`;
+          return;
         }
+
+        let html = `
+          <table>
+            <thead>
+              <tr>
+                <th>Purchase ID</th>
+                <th>Supplier</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Total Cost</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        purchases.forEach((p) => {
+          html += `
+            <tr>
+              <td><strong>#${p.purchase_id}</strong></td>
+              <td>${p.supplier_name || "N/A"}</td>
+              <td>${p.purchase_date ? new Date(p.purchase_date).toLocaleString() : "-"}</td>
+              <td>${p.status || "Completed"}</td>
+              <td style="color:var(--danger);">₱${parseFloat(p.total_cost || 0).toFixed(2)}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      }
+
+      function renderRentalsReport(rentals) {
+        const container = document.getElementById("reportContainer");
+        if (!Array.isArray(rentals) || rentals.length === 0) {
+          container.innerHTML = `<p style="text-align:center; padding: 20px;">No rental records found.</p>`;
+          return;
+        }
+
+        let html = `
+          <table>
+            <thead>
+              <tr>
+                <th>Rental ID</th>
+                <th>Equipment</th>
+                <th>Customer</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Status</th>
+                <th>Total Revenue</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        rentals.forEach((r) => {
+          html += `
+            <tr>
+              <td><strong>#${r.rental_id}</strong></td>
+              <td>${r.equipment_name || "N/A"}</td>
+              <td>${r.customer_name || "Walk-in"}</td>
+              <td>${r.start_time ? new Date(r.start_time).toLocaleString() : "-"}</td>
+              <td>${r.end_time ? new Date(r.end_time).toLocaleString() : "Ongoing"}</td>
+              <td>${r.status || "Active"}</td>
+              <td style="color:var(--success);">₱${parseFloat(r.total_amount || 0).toFixed(2)}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      }
+
+      function renderPaymentsReport(payments) {
+        const container = document.getElementById("reportContainer");
+        if (!Array.isArray(payments) || payments.length === 0) {
+          container.innerHTML = `<p style="text-align:center; padding: 20px;">No payment records found.</p>`;
+          return;
+        }
+
+        let html = `
+          <table>
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Sale ID</th>
+                <th>Rental ID</th>
+                <th>Payment Method</th>
+                <th>Payment Date</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        payments.forEach((pay) => {
+          html += `
+            <tr>
+              <td><strong>#${pay.payment_id}</strong></td>
+              <td>${pay.sale_id ? `#${pay.sale_id}` : "-"}</td>
+              <td>${pay.rental_id ? `#${pay.rental_id}` : "-"}</td>
+              <td>${pay.payment_method || "Cash"}</td>
+              <td>${pay.payment_date ? new Date(pay.payment_date).toLocaleString() : "-"}</td>
+              <td style="color:var(--success);">₱${parseFloat(pay.amount || 0).toFixed(2)}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
       }
     </script>
   </body>

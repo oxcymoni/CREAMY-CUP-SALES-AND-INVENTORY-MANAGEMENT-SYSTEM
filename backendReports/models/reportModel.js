@@ -1,17 +1,15 @@
 const db = require("../config/db");
 
 const ReportModel = {
-  getSalesReport: (callback) => {
+  getDailySalesReport: (callback) => {
     const sql = `
       SELECT
-        s.sale_id,
-        COALESCE(c.customer_name, 'Walk-in / Guest') AS customer_name,
-        s.sale_date,
-        s.total_amount,
-        s.status
-      FROM sales s
-      LEFT JOIN customers c ON s.customer_id = c.customer_id
-      ORDER BY s.sale_date DESC
+        DATE(sale_date) AS sale_date,
+        COUNT(sale_id) AS total_transactions,
+        SUM(total_amount) AS total_amount
+      FROM sales
+      GROUP BY DATE(sale_date)
+      ORDER BY sale_date DESC
     `;
     db.query(sql, callback);
   },
@@ -31,43 +29,20 @@ const ReportModel = {
     db.query(sql, callback);
   },
 
-  getInventoryReport: (callback) => {
+  getRentalReport: (callback) => {
     const sql = `
       SELECT
-        inventory_id,
-        item_name,
-        unit,
-        quantity_on_hand,
-        reorder_level
-      FROM inventory
-    `;
-    db.query(sql, callback);
-  },
-
-  getLowStockReport: (callback) => {
-    const sql = `
-      SELECT
-        inventory_id,
-        item_name,
-        quantity_on_hand,
-        reorder_level
-      FROM inventory
-      WHERE quantity_on_hand <= reorder_level
-    `;
-    db.query(sql, callback);
-  },
-
-  getStockAlertsReport: (callback) => {
-    const sql = `
-      SELECT
-        sa.alert_id,
-        i.item_name,
-        sa.alert_date,
-        sa.alert_message,
-        sa.alert_status
-      FROM stock_alerts sa
-      INNER JOIN inventory i ON sa.inventory_id = i.inventory_id
-      ORDER BY sa.alert_date DESC
+        r.rental_id,
+        COALESCE(eq.equipment_name, 'N/A') AS equipment_name,
+        COALESCE(c.customer_name, 'Walk-in') AS customer_name,
+        r.start_time,
+        r.end_time,
+        r.total_amount,
+        r.status
+      FROM rentals r
+      LEFT JOIN rental_equipment eq ON r.equipment_id = eq.equipment_id
+      LEFT JOIN customers c ON r.customer_id = c.customer_id
+      ORDER BY r.start_time DESC
     `;
     db.query(sql, callback);
   },
