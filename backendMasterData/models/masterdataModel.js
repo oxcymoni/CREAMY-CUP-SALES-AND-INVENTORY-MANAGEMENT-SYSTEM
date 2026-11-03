@@ -89,6 +89,32 @@ const MasterDataModel = {
   deleteProduct: (id, callback) => {
     db.query("DELETE FROM Products WHERE product_id = ?", [id], callback);
   },
+
+  getAllEmployees: (callback) => {
+    db.query("SELECT * FROM employees", callback);
+  },
+  getEmployeeById: (id, callback) => {
+    db.query("SELECT * FROM employees WHERE employee_id = ?", [id], callback);
+  },
+  createEmployee: (data, callback) => {
+    const { first_name, last_name, position, email, phone, status } = data;
+    db.query(
+      "INSERT INTO employees (first_name, last_name, position, email, phone, status) VALUES (?, ?, ?, ?, ?, ?)",
+      [first_name, last_name, position, email, phone, status || "Active"],
+      callback,
+    );
+  },
+  updateEmployee: (id, data, callback) => {
+    const { first_name, last_name, position, email, phone, status } = data;
+    db.query(
+      "UPDATE employees SET first_name = ?, last_name = ?, position = ?, email = ?, phone = ?, status = ? WHERE employee_id = ?",
+      [first_name, last_name, position, email, phone, status, id],
+      callback,
+    );
+  },
+  deleteEmployee: (id, callback) => {
+    db.query("DELETE FROM employees WHERE employee_id = ?", [id], callback);
+  },
 };
 
 module.exports = MasterDataModel;
