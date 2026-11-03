@@ -1,7 +1,6 @@
 const MasterDataModel = require("../models/masterdataModel");
 
 const MasterDataController = {
-  // SUPPLIERS
   getSuppliers: (req, res) => {
     MasterDataModel.getAllSuppliers((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -42,7 +41,6 @@ const MasterDataController = {
     });
   },
 
-  // CATEGORIES
   getCategories: (req, res) => {
     MasterDataModel.getAllCategories((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -83,7 +81,6 @@ const MasterDataController = {
     });
   },
 
-  // PRODUCTS
   getProducts: (req, res) => {
     MasterDataModel.getAllProducts((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -124,7 +121,6 @@ const MasterDataController = {
     });
   },
 
-  // EMPLOYEES (ADDED)
   getEmployees: (req, res) => {
     MasterDataModel.getAllEmployees((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
