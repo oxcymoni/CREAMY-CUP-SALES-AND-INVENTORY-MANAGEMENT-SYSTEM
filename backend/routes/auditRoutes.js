@@ -1,23 +1,28 @@
 const express = require("express");
 const router = express.Router();
-const AuditController = require("../controllers/auditController");
+const AuditControllers = require("../controllers/auditControllers");
+const SalesControllers = require("../controllers/salesControllers");
 
-router.get("/audit/equipment", AuditController.getEquipment);
-router.get("/audit/equipment/:id", AuditController.getEquipmentById);
-router.post("/audit/equipment", AuditController.createEquipment);
-router.put("/audit/equipment/:id", AuditController.updateEquipment);
-router.delete("/audit/equipment/:id", AuditController.deleteEquipment);
 
-router.get("/audit/rates", AuditController.getRentalRates);
-router.get("/audit/rates/:id", AuditController.getRentalRateById);
-router.post("/audit/rates", AuditController.createRentalRate);
-router.put("/audit/rates/:id", AuditController.updateRentalRate);
-router.delete("/audit/rates/:id", AuditController.deleteRentalRate);
+router.get("/equipment", AuditControllers.getEquipment);
+router.get("/equipment/:id", AuditControllers.getEquipmentById);
+router.post("/equipment", AuditControllers.createEquipment);
+router.put("/equipment/:id", AuditControllers.updateEquipment);
+router.delete("/equipment/:id", AuditControllers.deleteEquipment);
 
-router.get("/audit/rentals", AuditController.getRentals);
-router.get("/audit/rentals/:id", AuditController.getRentalById);
-router.post("/audit/rentals", AuditController.createRental);
-router.put("/audit/rentals/:id", AuditController.updateRental);
-router.delete("/audit/rentals/:id", AuditController.deleteRental);
+
+router.get("/rates", AuditControllers.getRentalRates);
+router.get("/rates/:id", AuditControllers.getRentalRateById);
+router.post("/rates", AuditControllers.createRentalRate);
+router.put("/rates/:id", AuditControllers.updateRentalRate);
+router.delete("/rates/:id", AuditControllers.deleteRentalRate);
+
+
+router.get("/rentals", SalesControllers.getRentalLogs);
+router.get("/rentals/:id", SalesControllers.getRentalLogById);
+router.post("/rentals", SalesControllers.createRentalLog);
+router.put("/rentals/:id", SalesControllers.updateRentalLog);
+router.delete("/rentals/:id", SalesControllers.deleteRentalLog);
+
 
 module.exports = router;
