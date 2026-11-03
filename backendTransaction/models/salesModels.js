@@ -97,7 +97,6 @@ const Model = {
       (err, result) => {
         if (err) return callback(err);
 
-        // Update payment method/amount if payment record exists
         if (data.payment_method) {
           db.query(
             "UPDATE payments SET amount = ?, payment_method = ? WHERE sale_id = ?",
