@@ -1,6 +1,5 @@
 const db = require("../config/db");
 
-// Helper to sanitize dates for MySQL DATETIME
 function formatSqlDateTime(val) {
   if (!val) return null;
   if (val instanceof Date) {
@@ -113,7 +112,6 @@ const Model = {
   },
 
   deleteSale: (id, callback) => {
-    // Delete from payments first to satisfy Foreign Key Constraint
     db.query("DELETE FROM payments WHERE sale_id = ?", [id], (payErr) => {
       if (payErr) return callback(payErr);
       db.query("DELETE FROM sales WHERE sale_id = ?", [id], callback);
@@ -260,7 +258,6 @@ const Model = {
   },
 
   deleteRentalLog: (id, callback) => {
-    // 1. Restore equipment to Available
     db.query(
       "SELECT equipment_id FROM rentals WHERE rental_id = ?",
       [id],
@@ -273,9 +270,8 @@ const Model = {
           );
         }
 
-        // 2. Delete linked payments first (Foreign Key constraint)
         db.query("DELETE FROM payments WHERE rental_id = ?", [id], () => {
-          // 3. Delete rental
+          
           db.query("DELETE FROM rentals WHERE rental_id = ?", [id], callback);
         });
       }
