@@ -1,18 +1,15 @@
 const db = require("../config/db");
 
 const ReportModel = {
-  getSalesReport: (callback) => {
+  getDailySalesReport: (callback) => {
     const sql = `
       SELECT
-        s.sale_id,
-        c.customer_name,
-        s.sale_date,
-        s.total_amount,
-        s.status
-      FROM Sales s
-      INNER JOIN Customers c
-      ON s.customer_id = c.customer_id
-      ORDER BY s.sale_date DESC
+        DATE(sale_date) AS sale_date,
+        COUNT(sale_id) AS total_transactions,
+        SUM(total_amount) AS total_amount
+      FROM sales
+      GROUP BY DATE(sale_date)
+      ORDER BY sale_date DESC
     `;
     db.query(sql, callback);
   },
@@ -21,56 +18,31 @@ const ReportModel = {
     const sql = `
       SELECT
         p.purchase_id,
-        s.supplier_name,
+        COALESCE(sp.supplier_name, 'N/A') AS supplier_name,
         p.purchase_date,
         p.total_cost,
         p.status
-      FROM Purchase p
-      INNER JOIN Suppliers s
-      ON p.supplier_id = s.supplier_id
+      FROM purchases p
+      LEFT JOIN suppliers sp ON p.supplier_id = sp.supplier_id
       ORDER BY p.purchase_date DESC
     `;
     db.query(sql, callback);
   },
 
-  getInventoryReport: (callback) => {
+  getRentalReport: (callback) => {
     const sql = `
       SELECT
-        inventory_id,
-        item_name,
-        unit,
-        quantity_on_hand,
-        reorder_level
-      FROM Inventory
-    `;
-    db.query(sql, callback);
-  },
-
-  getLowStockReport: (callback) => {
-    const sql = `
-      SELECT
-        inventory_id,
-        item_name,
-        quantity_on_hand,
-        reorder_level
-      FROM Inventory
-      WHERE quantity_on_hand <= reorder_level
-    `;
-    db.query(sql, callback);
-  },
-
-  getStockAlertsReport: (callback) => {
-    const sql = `
-      SELECT
-        sa.alert_id,
-        i.item_name,
-        sa.alert_date,
-        sa.alert_message,
-        sa.alert_status
-      FROM Stock_Alerts sa
-      INNER JOIN Inventory i
-      ON sa.inventory_id = i.inventory_id
-      ORDER BY sa.alert_date DESC
+        r.rental_id,
+        COALESCE(eq.equipment_name, 'N/A') AS equipment_name,
+        COALESCE(c.customer_name, 'Walk-in') AS customer_name,
+        r.start_time,
+        r.end_time,
+        r.total_amount,
+        r.status
+      FROM rentals r
+      LEFT JOIN rental_equipment eq ON r.equipment_id = eq.equipment_id
+      LEFT JOIN customers c ON r.customer_id = c.customer_id
+      ORDER BY r.start_time DESC
     `;
     db.query(sql, callback);
   },
@@ -84,7 +56,7 @@ const ReportModel = {
         amount,
         payment_method,
         payment_date
-      FROM Payments
+      FROM payments
       ORDER BY payment_date DESC
     `;
     db.query(sql, callback);

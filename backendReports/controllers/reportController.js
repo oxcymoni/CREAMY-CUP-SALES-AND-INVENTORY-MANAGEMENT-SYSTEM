@@ -2,7 +2,7 @@ const ReportModel = require("../models/reportModel");
 
 const ReportController = {
   getSalesReport: (req, res) => {
-    ReportModel.getSalesReport((err, results) => {
+    ReportModel.getDailySalesReport((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       res.status(200).json(results);
     });
@@ -15,22 +15,8 @@ const ReportController = {
     });
   },
 
-  getInventoryReport: (req, res) => {
-    ReportModel.getInventoryReport((err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(200).json(results);
-    });
-  },
-
-  getLowStockReport: (req, res) => {
-    ReportModel.getLowStockReport((err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(200).json(results);
-    });
-  },
-
-  getStockAlertsReport: (req, res) => {
-    ReportModel.getStockAlertsReport((err, results) => {
+  getRentalReport: (req, res) => {
+    ReportModel.getRentalReport((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       res.status(200).json(results);
     });
@@ -39,7 +25,7 @@ const ReportController = {
   getPaymentsReport: (req, res) => {
     ReportModel.getPaymentsReport((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.status(200).json(results);
+      res.status(200).json(results || []);
     });
   },
 };
