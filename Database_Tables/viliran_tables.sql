@@ -1,4 +1,5 @@
 CREATE TABLE sales (
+CREATE TABLE Sales (
     sale_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     user_id INT NOT NULL, 
