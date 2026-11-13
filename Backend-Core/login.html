@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login | The Creamy Cup</title>
+    <style>
+      :root {
+        --brand: #e8892b;
+        --ink: #262a3a;
+        --muted: #6b6f80;
+        --panel: #dfdae0;
+        --line: #d6d3dc;
+        --danger: #c0392b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        color: var(--ink);
+        background: #fff;
+      }
+      .page {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .brand {
+        background: var(--panel);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 32px;
+      }
+      .brand img {
+        width: min(520px, 90%);
+        max-height: 80vh;
+        height: auto;
+        display: block;
+        border-radius: 16px;
+        object-fit: contain;
+      }
+      .form-wrap {
+        display: grid;
+        place-items: center;
+        padding: 32px;
+      }
+      .card {
+        width: min(400px, 100%);
+      }
+      h1 {
+        font-size: 1.75rem;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 28px;
+      }
+      .field {
+        margin-bottom: 18px;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+      }
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 12px 14px;
+        font: inherit;
+        color: var(--ink);
+        background: #fff;
+        border: 1.5px solid var(--line);
+        border-radius: 10px;
+      }
+      input:focus {
+        outline: 3px solid rgba(232, 137, 43, 0.35);
+        border-color: var(--brand);
+      }
+      input[aria-invalid="true"] {
+        border-color: var(--danger);
+      }
+      .pw {
+        position: relative;
+      }
+      .pw input {
+        padding-right: 68px;
+      }
+      .toggle {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 0;
+        background: none;
+        color: var(--muted);
+        font: inherit;
+        font-size: 0.85rem;
+        padding: 6px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .toggle:hover {
+        color: var(--ink);
+      }
+      .field-error {
+        color: var(--danger);
+        font-size: 0.85rem;
+        margin-top: 6px;
+      }
+      .remember {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+      }
+      .btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 13px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--brand);
+        color: var(--ink);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .btn:hover:not(:disabled) {
+        filter: brightness(1.08);
+      }
+      .btn:disabled {
+        opacity: 0.75;
+        cursor: progress;
+      }
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2.5px solid rgba(38, 42, 58, 0.3);
+        border-top-color: var(--ink);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: none;
+      }
+      .btn.loading .spinner {
+        display: inline-block;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .alert {
+        display: none;
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 0.92rem;
+        margin-bottom: 18px;
+      }
+      .alert.show {
+        display: block;
+      }
+      .alert.error {
+        background: #fdecea;
+        color: #8a1f12;
+        border: 1px solid #f5c6c0;
+      }
+      .alert.success {
+        background: #e8f6ee;
+        color: #14532d;
+        border: 1px solid #b7e1c8;
+      }
+      .foot {
+        margin-top: 28px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-align: center;
+      }
+      @media (max-width: 860px) {
+        .page {
+          grid-template-columns: 1fr;
+        }
+        .brand {
+          padding: 24px;
+        }
+        .brand img {
+          width: min(220px, 60vw);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .spinner {
+          animation-duration: 2s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="brand">
+        <img
+          src="CREAMY_CUP_LOGO.jpg"
+          alt="The Creamy Cup – Kape ni Coach logo"
+        />
+      </section>
+
+
+      <section class="form-wrap">
+        <div class="card">
+          <h1>Welcome back</h1>
+          <p class="sub">Sign in to continue to The Creamy Cup.</p>
+
+
+          <div
+            id="alertBox"
+            class="alert"
+            role="alert"
+            aria-live="assertive"
+          ></div>
+
+
+          <form id="loginForm" novalidate>
+            <div class="field">
+              <label for="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                autocomplete="username"
+                maxlength="50"
+                autofocus
+              />
+              <div class="field-error" id="usernameError"></div>
+            </div>
+
+
+            <div class="field">
+              <label for="password">Password</label>
+              <div class="pw">
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  autocomplete="current-password"
+                  maxlength="100"
+                />
+                <button
+                  type="button"
+                  class="toggle"
+                  id="togglePw"
+                  aria-label="Show password"
+                >
+                  Show
+                </button>
+              </div>
+              <div class="field-error" id="passwordError"></div>
+            </div>
+
+
+            <label class="remember"
+              ><input type="checkbox" id="remember" /> Keep me signed in on this
+              device</label
+            >
+
+
+            <button type="submit" class="btn" id="submitBtn">
+              <span class="spinner" aria-hidden="true"></span>
+              <span id="btnText">Sign in</span>
+            </button>
+          </form>
+
+
+          <p class="foot">© The Creamy Cup · Kape ni Coach</p>
+        </div>
+      </section>
+    </main>
+
+
+    <script>
+      const API_URL = "http://localhost:3000/api/auth/login";
+      const REDIRECT_TO = "masterdata.html";
+
+
+      const form = document.getElementById("loginForm");
+      const alertBox = document.getElementById("alertBox");
+      const submitBtn = document.getElementById("submitBtn");
+      const btnText = document.getElementById("btnText");
+      const pwInput = document.getElementById("password");
+      let redirecting = false;
+
+
+      document.getElementById("togglePw").addEventListener("click", (e) => {
+        const show = pwInput.type === "password";
+        pwInput.type = show ? "text" : "password";
+        e.currentTarget.textContent = show ? "Hide" : "Show";
+        e.currentTarget.setAttribute(
+          "aria-label",
+          show ? "Hide password" : "Show password",
+        );
+      });
+
+
+      function showAlert(type, message) {
+        alertBox.className = "alert " + type + " show";
+        alertBox.textContent = message;
+      }
+
+
+      function clearErrors() {
+        alertBox.className = "alert";
+        alertBox.textContent = "";
+        ["username", "password"].forEach((f) => {
+          document.getElementById(f).removeAttribute("aria-invalid");
+          document.getElementById(f + "Error").textContent = "";
+        });
+      }
+
+
+      function setFieldError(field, message) {
+        const input = document.getElementById(field);
+        if (!input) return false;
+        input.setAttribute("aria-invalid", "true");
+        document.getElementById(field + "Error").textContent = message;
+        input.focus();
+        return true;
+      }
+
+
+      function setLoading(on) {
+        submitBtn.disabled = on;
+        submitBtn.classList.toggle("loading", on);
+        btnText.textContent = on ? "Signing in…" : "Sign in";
+      }
+
+
+      function saveSession(user, remember) {
+        const keep = remember ? localStorage : sessionStorage;
+        const drop = remember ? sessionStorage : localStorage;
+        try {
+          drop.removeItem("user");
+          keep.setItem("user", JSON.stringify(user));
+        } catch (_) {}
+      }
+
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearErrors();
+
+
+        const username = form.username.value.trim();
+        const password = form.password.value;
+        if (!username) return setFieldError("username", "Username is required");
+        if (!password) return setFieldError("password", "Password is required");
+
+
+        setLoading(true);
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+
+
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+            signal: controller.signal,
+          });
+          const body = await res.json().catch(() => null);
+
+
+          if (res.ok) {
+            saveSession(body.user, document.getElementById("remember").checked);
+            showAlert(
+              "success",
+              "Welcome back, " +
+                body.user.first_name +
+                " " +
+                body.user.last_name +
+                "! Redirecting…",
+            );
+            redirecting = true;
+            setTimeout(() => {
+              window.location.href = REDIRECT_TO;
+            }, 800);
+            return;
+          }
+
+
+          const errorMessage =
+            (body && body.error) || "Something went wrong. Please try again.";
+
+
+          if (
+            res.status === 400 &&
+            errorMessage.toLowerCase().includes("username")
+          ) {
+            setFieldError("username", errorMessage);
+          } else if (
+            res.status === 400 &&
+            errorMessage.toLowerCase().includes("password")
+          ) {
+            setFieldError("password", errorMessage);
+          } else {
+            showAlert("error", errorMessage);
+          }
+        } catch (err) {
+          showAlert(
+            "error",
+            err.name === "AbortError"
+              ? "The server took too long to respond. Please try again."
+              : "Cannot reach the server. Make sure the API is running.",
+          );
+        } finally {
+          clearTimeout(timer);
+          if (!redirecting) setLoading(false);
+        }
+      });
+    </script>
+  </body>
+</html>
