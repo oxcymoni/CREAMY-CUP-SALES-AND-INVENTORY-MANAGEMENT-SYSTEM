@@ -1,3 +1,4 @@
+CREATE TABLE sales (
 CREATE TABLE Sales (
     sale_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
@@ -6,11 +7,11 @@ CREATE TABLE Sales (
     total_amount DECIMAL(12, 2) NOT NULL,
     status VARCHAR(50) NOT NULL,
 
-    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-CREATE TABLE Sale_Details (
+CREATE TABLE sale_Details (
     sale_detail_id INT AUTO_INCREMENT PRIMARY KEY,
     sale_id INT NOT NULL,
     product_id INT NOT NULL,
@@ -18,11 +19,11 @@ CREATE TABLE Sale_Details (
     unit_price DECIMAL(10, 2) NOT NULL,
     subtotal DECIMAL(12, 2) NOT NULL,
 
-    FOREIGN KEY (sale_id) REFERENCES Sales(sale_id),
-    FOREIGN KEY (product_id) REFERENCES Products(product_id)
+    FOREIGN KEY (sale_id) REFERENCES sales(sale_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
-CREATE TABLE Payments (
+CREATE TABLE payments (
     payment_id INT AUTO_INCREMENT PRIMARY KEY,
     sale_id INT NULL,
     rental_id INT NULL,
@@ -30,6 +31,6 @@ CREATE TABLE Payments (
     payment_method VARCHAR(50) NOT NULL,
     payment_date DATETIME NOT NULL,
  
-    FOREIGN KEY (sale_id) REFERENCES Sales(sale_id),
-    FOREIGN KEY (rental_id) REFERENCES Rentals(rental_id)
+    FOREIGN KEY (sale_id) REFERENCES sales(sale_id),
+    FOREIGN KEY (rental_id) REFERENCES rentals(rental_id)
 );
