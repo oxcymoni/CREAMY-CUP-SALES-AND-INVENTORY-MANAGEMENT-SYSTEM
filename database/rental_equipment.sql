@@ -1,21 +1,21 @@
-CREATE TABLE Rental_Equipment (
+CREATE TABLE rental_equipment (
     equipment_id INT AUTO_INCREMENT PRIMARY KEY,
     equipment_name VARCHAR(150) NOT NULL,
     equipment_type VARCHAR(100), 
     status VARCHAR(50)
 );
 
-CREATE TABLE Rental_Rates (
+CREATE TABLE rental_rates (
     rate_id INT AUTO_INCREMENT PRIMARY KEY,
     equipment_id INT NOT NULL,
     rate_amount DECIMAL(10,2) NOT NULL,
     billing_unit VARCHAR(50) NOT NULL,
     effective_date DATE NOT NULL,
     FOREIGN KEY (equipment_id) REFERENCES 
-  Rental_Equipment(equipment_id)
+  rental_equipment(equipment_id)
 );
 
-CREATE TABLE Rentals (
+CREATE TABLE rentals (
     rental_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -26,11 +26,11 @@ CREATE TABLE Rentals (
     total_amount DECIMAL(12,2),
     status VARCHAR(50),
     FOREIGN KEY (customer_id) REFERENCES 
-  Customers(customer_id),
+  customers(customer_id),
     FOREIGN KEY (user_id) REFERENCES
-  Users(user_id),
+  users(user_id),
     FOREIGN KEY (equipment_id) REFERENCES
-  Rental_Equipment(equipment_id),
+  rental_equipment(equipment_id),
     FOREIGN KEY (rate_id) REFERENCES 
-  Rental_Rates(rate_id)
+  rental_rates(rate_id)
 );
