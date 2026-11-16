@@ -1,4 +1,4 @@
-CREATE TABLE Employees (
+CREATE TABLE employees (
     employee_id INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
@@ -6,7 +6,7 @@ CREATE TABLE Employees (
     contact_number VARCHAR(20)
 );
 
-CREATE TABLE Users (
+CREATE TABLE users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id INT NOT NULL,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -16,7 +16,7 @@ CREATE TABLE Users (
     FOREIGN KEY (employee_id) REFERENCES Employees(employee_id)
 );
 
-CREATE TABLE Customers (
+CREATE TABLE customers (
     customer_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_name VARCHAR(150) NOT NULL,
     contact_number VARCHAR(20)
