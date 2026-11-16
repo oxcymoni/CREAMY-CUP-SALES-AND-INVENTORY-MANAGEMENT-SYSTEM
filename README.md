@@ -397,5 +397,3 @@ Base URL: /api
 ## Entity Relationship Diagram (ERD)
 
 ![Creamy Cup ER Diagram](assets/ER-Diagram.png)
-
-`The Creamy Cup – Sales and Inventory Management System`
