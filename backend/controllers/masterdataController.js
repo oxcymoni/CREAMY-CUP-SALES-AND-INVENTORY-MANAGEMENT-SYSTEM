@@ -1,6 +1,7 @@
 const MasterDataModel = require("../models/masterdataModel");
 
 const MasterDataController = {
+  // SUPPLIERS
   getSuppliers: (req, res) => {
     MasterDataModel.getAllSuppliers((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -41,6 +42,7 @@ const MasterDataController = {
     });
   },
 
+  // CATEGORIES
   getCategories: (req, res) => {
     MasterDataModel.getAllCategories((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -81,6 +83,7 @@ const MasterDataController = {
     });
   },
 
+  // PRODUCTS
   getProducts: (req, res) => {
     MasterDataModel.getAllProducts((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -121,6 +124,7 @@ const MasterDataController = {
     });
   },
 
+  // EMPLOYEES (ADDED)
   getEmployees: (req, res) => {
     MasterDataModel.getAllEmployees((err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -158,6 +162,47 @@ const MasterDataController = {
       if (results.affectedRows === 0)
         return res.status(404).json({ message: "Employee not found" });
       res.status(200).json({ message: "Employee deleted successfully" });
+    });
+  },
+
+  // CUSTOMERS
+  getCustomers: (req, res) => {
+    MasterDataModel.getAllCustomers((err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(200).json(results);
+    });
+  },
+  getCustomerById: (req, res) => {
+    MasterDataModel.getCustomerById(req.params.id, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.length === 0)
+        return res.status(404).json({ message: "Customer not found" });
+      res.status(200).json(results[0]);
+    });
+  },
+  createCustomer: (req, res) => {
+    MasterDataModel.createCustomer(req.body, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({
+        message: "Customer created successfully",
+        customer_id: results.insertId,
+      });
+    });
+  },
+  updateCustomer: (req, res) => {
+    MasterDataModel.updateCustomer(req.params.id, req.body, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.affectedRows === 0)
+        return res.status(404).json({ message: "Customer not found" });
+      res.status(200).json({ message: "Customer updated successfully" });
+    });
+  },
+  deleteCustomer: (req, res) => {
+    MasterDataModel.deleteCustomer(req.params.id, (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.affectedRows === 0)
+        return res.status(404).json({ message: "Customer not found" });
+      res.status(200).json({ message: "Customer deleted successfully" });
     });
   },
 };

@@ -26,4 +26,10 @@ router.post("/employees", MasterDataController.createEmployee);
 router.put("/employees/:id", MasterDataController.updateEmployee);
 router.delete("/employees/:id", MasterDataController.deleteEmployee);
 
+router.get("/customers", MasterDataController.getCustomers);
+router.get("/customers/:id", MasterDataController.getCustomerById);
+router.post("/customers", MasterDataController.createCustomer);
+router.put("/customers/:id", MasterDataController.updateCustomer);
+router.delete("/customers/:id", MasterDataController.deleteCustomer);
+
 module.exports = router;

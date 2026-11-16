@@ -115,6 +115,33 @@ const MasterDataModel = {
   deleteEmployee: (id, callback) => {
     db.query("DELETE FROM employees WHERE employee_id = ?", [id], callback);
   },
+
+  // CUSTOMERS
+  getAllCustomers: (callback) => {
+    db.query("SELECT * FROM Customers", callback);
+  },
+  getCustomerById: (id, callback) => {
+    db.query("SELECT * FROM Customers WHERE customer_id = ?", [id], callback);
+  },
+  createCustomer: (data, callback) => {
+    const { customer_name, contact_number } = data;
+    db.query(
+      "INSERT INTO Customers (customer_name, contact_number) VALUES (?, ?)",
+      [customer_name, contact_number],
+      callback,
+    );
+  },
+  updateCustomer: (id, data, callback) => {
+    const { customer_name, contact_number } = data;
+    db.query(
+      "UPDATE Customers SET customer_name = ?, contact_number = ? WHERE customer_id = ?",
+      [customer_name, contact_number, id],
+      callback,
+    );
+  },
+  deleteCustomer: (id, callback) => {
+    db.query("DELETE FROM Customers WHERE customer_id = ?", [id], callback);
+  },
 };
 
 module.exports = MasterDataModel;

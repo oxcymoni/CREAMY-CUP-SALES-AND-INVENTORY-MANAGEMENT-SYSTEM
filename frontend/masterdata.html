@@ -165,16 +165,20 @@
         color: var(--muted);
       }
       .badge {
-        padding: 4px 8px;
+        display: inline-block;
+        padding: 4px 10px;
         border-radius: 4px;
         font-size: 0.78rem;
         font-weight: 700;
+        text-transform: capitalize;
       }
-      .badge.active {
+      .badge.active,
+      .badge.available {
         background: #e8f6ee;
         color: var(--success);
       }
-      .badge.inactive {
+      .badge.inactive,
+      .badge.unavailable {
         background: #fdecea;
         color: var(--danger);
       }
@@ -210,6 +214,8 @@
         border-radius: 12px;
         width: min(480px, 100%);
         padding: 24px;
+        max-height: 90vh;
+        overflow-y: auto;
       }
       .modal-header {
         display: flex;
@@ -334,6 +340,7 @@
             ✕
           </button>
         </div>
+        <div id="modalAlert" class="alert-msg"></div>
         <form id="modalForm">
           <div id="modalFields"></div>
           <div class="modal-footer">
@@ -422,8 +429,8 @@
         const thead = document.getElementById("tableHead");
 
         tbody.innerHTML = `
- <tr><td colspan="6">Loading data...</td></tr>
- `;
+          <tr><td colspan="6">Loading data...</td></tr>
+        `;
 
         try {
           const res = await fetch(`${API_BASE}/${currentTab}`);
@@ -443,12 +450,12 @@
 
           thead.innerHTML = "";
           tbody.innerHTML = `
- <tr>
- <td colspan="6" style="color:var(--danger)">
- ${err.message}
- </td>
- </tr>
- `;
+            <tr>
+              <td colspan="6" style="color:var(--danger)">
+                ${err.message}
+              </td>
+            </tr>
+          `;
         }
       }
 
@@ -461,150 +468,161 @@
         if (data.length === 0) {
           thead.innerHTML = "";
           tbody.innerHTML = `
- <tr><td colspan="6">No records found.</td></tr>
- `;
+            <tr><td colspan="6">No records found.</td></tr>
+          `;
           return;
         }
 
         if (currentTab === "suppliers") {
           thead.innerHTML = `
- <tr>
- <th>ID</th>
- <th>Supplier Name</th>
- <th>Contact Number</th>
- <th>Address</th>
- <th>Actions</th>
- </tr>
- `;
+            <tr>
+              <th>ID</th>
+              <th>Supplier Name</th>
+              <th>Contact Number</th>
+              <th>Address</th>
+              <th>Actions</th>
+            </tr>
+          `;
 
           data.forEach((item) => {
             tbody.innerHTML += `
- <tr>
- <td>${item.supplier_id}</td>
- <td><strong>${item.supplier_name}</strong></td>
- <td>${item.contact_number || "-"}</td>
- <td>${item.address || "-"}</td>
- <td>
- <button class="btn-sm edit"
- onclick="openEditModal(${item.supplier_id})">
- Edit
- </button>
- <button class="btn-sm delete"
- onclick="deleteRecord(${item.supplier_id})">
- Delete
- </button>
- </td>
- </tr>
- `;
+              <tr>
+                <td>${item.supplier_id}</td>
+                <td><strong>${item.supplier_name}</strong></td>
+                <td>${item.contact_number || "-"}</td>
+                <td>${item.address || "-"}</td>
+                <td>
+                  <button class="btn-sm edit"
+                    onclick="openEditModal(${item.supplier_id})">
+                    Edit
+                  </button>
+                  <button class="btn-sm delete"
+                    onclick="deleteRecord(${item.supplier_id})">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            `;
           });
         } else if (currentTab === "categories") {
           thead.innerHTML = `
- <tr>
- <th>ID</th>
- <th>Category Name</th>
- <th>Description</th>
- <th>Actions</th>
- </tr>
- `;
+            <tr>
+              <th>ID</th>
+              <th>Category Name</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          `;
 
           data.forEach((item) => {
             tbody.innerHTML += `
- <tr>
- <td>${item.category_id}</td>
- <td><strong>${item.category_name}</strong></td>
- <td>${item.description || "-"}</td>
- <td>
- <button class="btn-sm edit"
- onclick="openEditModal(${item.category_id})">
- Edit
- </button>
- <button class="btn-sm delete"
- onclick="deleteRecord(${item.category_id})">
- Delete
- </button>
- </td>
- </tr>
- `;
+              <tr>
+                <td>${item.category_id}</td>
+                <td><strong>${item.category_name}</strong></td>
+                <td>${item.description || "-"}</td>
+                <td>
+                  <button class="btn-sm edit"
+                    onclick="openEditModal(${item.category_id})">
+                    Edit
+                  </button>
+                  <button class="btn-sm delete"
+                    onclick="deleteRecord(${item.category_id})">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            `;
           });
         } else if (currentTab === "products") {
           thead.innerHTML = `
- <tr>
- <th>ID</th>
- <th>Product Name</th>
- <th>Category</th>
- <th>Price</th>
- <th>Status</th>
- <th>Actions</th>
- </tr>
- `;
+            <tr>
+              <th>ID</th>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          `;
 
           data.forEach((item) => {
+            const isAvailable =
+              String(item.status || "")
+                .trim()
+                .toLowerCase() === "available";
+
             tbody.innerHTML += `
- <tr>
- <td>${item.product_id}</td>
- <td><strong>${item.product_name}</strong></td>
- <td>${item.category_name || item.category_id}</td>
- <td>₱${Number(item.price).toFixed(2)}</td>
- <td>
- <span class="badge ${item.status === "Active" ? "active" : "inactive"}">
- ${item.status}
- </span>
- </td>
- <td>
- <button class="btn-sm edit"
- onclick="openEditModal(${item.product_id})">
- Edit
- </button>
- <button class="btn-sm delete"
- onclick="deleteRecord(${item.product_id})">
- Delete
- </button>
- </td>
- </tr>
- `;
+              <tr>
+                <td>${item.product_id}</td>
+                <td><strong>${item.product_name}</strong></td>
+                <td>${item.category_name || item.category_id}</td>
+                <td>₱${Number(item.price).toFixed(2)}</td>
+                <td>
+                  <span class="badge ${isAvailable ? "available" : "unavailable"}">
+                    ${item.status || "Unavailable"}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn-sm edit"
+                    onclick="openEditModal(${item.product_id})">
+                    Edit
+                  </button>
+                  <button class="btn-sm delete"
+                    onclick="deleteRecord(${item.product_id})">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            `;
           });
         } else if (currentTab === "employees") {
           thead.innerHTML = `
- <tr>
- <th>ID</th>
- <th>Employee Name</th>
- <th>Role / Position</th>
- <th>Contact Number</th>
- <th>Status</th>
- <th>Actions</th>
- </tr>
- `;
+            <tr>
+              <th>ID</th>
+              <th>Employee Name</th>
+              <th>Role / Position</th>
+              <th>Contact Number</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          `;
 
           data.forEach((item) => {
+            const fullName =
+              `${item.first_name || ""} ${item.last_name || ""}`.trim();
+            const rawStatus = String(item.status || "Active").trim();
+            const isActive = rawStatus.toLowerCase() === "active";
+
             tbody.innerHTML += `
- <tr>
- <td>EMP-${item.employee_id || item.id}</td>
- <td><strong>${item.name || item.employee_name}</strong></td>
- <td>${item.role || item.position || "-"}</td>
- <td>${item.contact || item.contact_number || "-"}</td>
- <td>
- <span class="badge ${item.status === "Active" ? "active" : "inactive"}">
- ${item.status || "Active"}
- </span>
- </td>
- <td>
- <button class="btn-sm edit"
- onclick="openEditModal(${item.employee_id || item.id})">
- Edit
- </button>
- <button class="btn-sm delete"
- onclick="deleteRecord(${item.employee_id || item.id})">
- Delete
- </button>
- </td>
- </tr>
- `;
+              <tr>
+                <td>EMP-${item.employee_id || item.id}</td>
+                <td><strong>${fullName || item.name || item.employee_name || "-"}</strong></td>
+                <td>${item.position || item.role || "-"}</td>
+                <td>${item.phone || item.contact || item.contact_number || "-"}</td>
+                <td>
+                  <span class="badge ${isActive ? "active" : "inactive"}">
+                    ${isActive ? "Active" : rawStatus}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn-sm edit"
+                    onclick="openEditModal(${item.employee_id || item.id})">
+                    Edit
+                  </button>
+                  <button class="btn-sm delete"
+                    onclick="deleteRecord(${item.employee_id || item.id})">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            `;
           });
         }
       }
 
       async function openCreateModal() {
         editingId = null;
+        showModalStatus("", "");
 
         if (currentTab === "products") {
           await loadCategoriesCache();
@@ -620,6 +638,7 @@
 
       async function openEditModal(id) {
         editingId = id;
+        showModalStatus("", "");
 
         try {
           if (currentTab === "products") {
@@ -635,10 +654,16 @@
             );
           }
 
+          const record = Array.isArray(item) ? item[0] : item;
+
+          if (!record) {
+            throw new Error("Record not found");
+          }
+
           document.getElementById("modalTitle").textContent =
             `Edit ${currentTab.slice(0, -1)}`;
 
-          buildModalFields(item);
+          buildModalFields(record);
 
           document.getElementById("modalBackdrop").classList.add("show");
         } catch (err) {
@@ -652,111 +677,122 @@
 
         if (currentTab === "suppliers") {
           container.innerHTML = `
- <div class="form-group">
- <label>Supplier Name *</label>
- <input type="text" id="supplier_name"
- value="${data.supplier_name || ""}" required />
- </div>
+            <div class="form-group">
+              <label>Supplier Name *</label>
+              <input type="text" id="supplier_name"
+                value="${data.supplier_name || ""}" required />
+            </div>
 
- <div class="form-group">
- <label>Contact Number</label>
- <input type="text" id="contact_number"
- value="${data.contact_number || ""}" />
- </div>
+            <div class="form-group">
+              <label>Contact Number</label>
+              <input type="text" id="contact_number"
+                value="${data.contact_number || ""}" />
+            </div>
 
- <div class="form-group">
- <label>Address</label>
- <input type="text" id="address"
- value="${data.address || ""}" />
- </div>
- `;
+            <div class="form-group">
+              <label>Address</label>
+              <input type="text" id="address"
+                value="${data.address || ""}" />
+            </div>
+          `;
         } else if (currentTab === "categories") {
           container.innerHTML = `
- <div class="form-group">
- <label>Category Name *</label>
- <input type="text" id="category_name"
- value="${data.category_name || ""}" required />
- </div>
+            <div class="form-group">
+              <label>Category Name *</label>
+              <input type="text" id="category_name"
+                value="${data.category_name || ""}" required />
+            </div>
 
- <div class="form-group">
- <label>Description</label>
- <textarea id="description" rows="3">${data.description || ""}</textarea>
- </div>
- `;
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="description" rows="3">${data.description || ""}</textarea>
+            </div>
+          `;
         } else if (currentTab === "products") {
           const categoryOptions = categoriesCache
             .map(
               (c) => `
- <option value="${c.category_id}"
- ${String(data.category_id) === String(c.category_id) ? "selected" : ""}>
- ${c.category_name}
- </option>
- `,
+                <option value="${c.category_id}"
+                  ${String(data.category_id) === String(c.category_id) ? "selected" : ""}>
+                  ${c.category_name}
+                </option>
+              `,
             )
             .join("");
 
           container.innerHTML = `
- <div class="form-group">
- <label>Category *</label>
- <select id="category_id" required>
- ${categoryOptions}
- </select>
- </div>
+            <div class="form-group">
+              <label>Category *</label>
+              <select id="category_id" required>
+                ${categoryOptions}
+              </select>
+            </div>
 
- <div class="form-group">
- <label>Product Name *</label>
- <input type="text" id="product_name"
- value="${data.product_name || ""}" required />
- </div>
+            <div class="form-group">
+              <label>Product Name *</label>
+              <input type="text" id="product_name"
+                value="${data.product_name || ""}" required />
+            </div>
 
- <div class="form-group">
- <label>Price (₱) *</label>
- <input type="number" step="0.01" min="0" id="price"
- value="${data.price ?? ""}" required />
- </div>
+            <div class="form-group">
+              <label>Price (₱) *</label>
+              <input type="number" step="0.01" min="0" id="price"
+                value="${data.price ?? ""}" required />
+            </div>
 
- <div class="form-group">
- <label>Status</label>
- <select id="status">
- <option value="Active"
- ${data.status === "Active" ? "selected" : ""}>
- Active
- </option>
- <option value="Inactive"
- ${data.status === "Inactive" ? "selected" : ""}>
- Inactive
- </option>
- </select>
- </div>
- `;
+            <div class="form-group">
+              <label>Status</label>
+              <select id="status">
+                <option value="Available"
+                  ${String(data.status || "").toLowerCase() === "available" ? "selected" : ""}>
+                  Available
+                </option>
+                <option value="Unavailable"
+                  ${String(data.status || "").toLowerCase() === "unavailable" ? "selected" : ""}>
+                  Unavailable
+                </option>
+              </select>
+            </div>
+          `;
         } else if (currentTab === "employees") {
+          const isInactive =
+            String(data.status || "")
+              .trim()
+              .toLowerCase() === "inactive";
+
           container.innerHTML = `
- <div class="form-group">
- <label>Full Name *</label>
- <input type="text" id="emp_name"
- value="${data.name || data.employee_name || ""}" required />
- </div>
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" id="emp_first_name"
+                value="${data.first_name || ""}" required />
+            </div>
 
- <div class="form-group">
- <label>Role / Position *</label>
- <input type="text" id="emp_role"
- value="${data.role || data.position || ""}" required />
- </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" id="emp_last_name"
+                value="${data.last_name || ""}" required />
+            </div>
 
- <div class="form-group">
- <label>Contact Number</label>
- <input type="text" id="emp_contact"
- value="${data.contact || data.contact_number || ""}" />
- </div>
+            <div class="form-group">
+              <label>Role / Position *</label>
+              <input type="text" id="emp_position"
+                value="${data.position || data.role || ""}" required />
+            </div>
 
- <div class="form-group">
- <label>Status</label>
- <select id="emp_status">
- <option value="Active" ${data.status === "Active" ? "selected" : ""}>Active</option>
- <option value="Inactive" ${data.status === "Inactive" ? "selected" : ""}>Inactive</option>
- </select>
- </div>
- `;
+            <div class="form-group">
+              <label>Contact Number</label>
+              <input type="text" id="emp_phone"
+                value="${data.phone || data.contact || data.contact_number || ""}" />
+            </div>
+
+            <div class="form-group">
+              <label>Status</label>
+              <select id="emp_status">
+                <option value="Active" ${!isInactive ? "selected" : ""}>Active</option>
+                <option value="Inactive" ${isInactive ? "selected" : ""}>Inactive</option>
+              </select>
+            </div>
+          `;
         }
       }
 
@@ -764,6 +800,7 @@
         .getElementById("modalForm")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
+          showModalStatus("", "");
 
           let payload = {};
 
@@ -787,9 +824,10 @@
             };
           } else if (currentTab === "employees") {
             payload = {
-              name: document.getElementById("emp_name").value,
-              role: document.getElementById("emp_role").value,
-              contact: document.getElementById("emp_contact").value,
+              first_name: document.getElementById("emp_first_name").value,
+              last_name: document.getElementById("emp_last_name").value,
+              position: document.getElementById("emp_position").value,
+              phone: document.getElementById("emp_phone").value,
               status: document.getElementById("emp_status").value,
             };
           }
@@ -826,7 +864,7 @@
             await loadTabData();
           } catch (err) {
             console.error(err);
-            showStatus("error", err.message);
+            showModalStatus("error", err.message);
           }
         });
 
@@ -856,11 +894,25 @@
       }
 
       function closeModal() {
+        showModalStatus("", "");
         document.getElementById("modalBackdrop").classList.remove("show");
       }
 
       function showStatus(type, msg) {
         const box = document.getElementById("statusAlert");
+
+        if (!type) {
+          box.style.display = "none";
+          box.className = "alert-msg";
+          return;
+        }
+
+        box.className = `alert-msg ${type}`;
+        box.textContent = msg;
+      }
+
+      function showModalStatus(type, msg) {
+        const box = document.getElementById("modalAlert");
 
         if (!type) {
           box.style.display = "none";
