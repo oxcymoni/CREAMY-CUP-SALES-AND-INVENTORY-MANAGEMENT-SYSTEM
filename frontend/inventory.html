@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Equipment & Audit | The Creamy Cup</title>
+    <title>Inventory & Stock | The Creamy Cup</title>
     <style>
       :root {
         --brand: #e8892b;
@@ -101,9 +101,10 @@
         gap: 8px;
         margin-bottom: 24px;
         border-bottom: 2px solid var(--line);
+        overflow-x: auto;
       }
       .tab-btn {
-        padding: 12px 24px;
+        padding: 12px 20px;
         border: none;
         background: none;
         font: inherit;
@@ -112,6 +113,7 @@
         cursor: pointer;
         border-bottom: 3px solid transparent;
         margin-bottom: -2px;
+        white-space: nowrap;
       }
       .tab-btn.active {
         color: var(--brand);
@@ -264,8 +266,8 @@
           <a href="masterdata.html">Master Data</a>
           <a href="transactions.html">Transactions</a>
           <a href="reports.html">Reports</a>
-          <a href="inventory.html">Inventory & Stock</a>
-          <a href="audit.html" class="active">Equipment Audit</a>
+          <a href="inventory.html" class="active">Inventory & Stock</a>
+          <a href="audit.html">Equipment Audit</a>
         </nav>
       </div>
       <div class="user-info">
@@ -274,25 +276,29 @@
       </div>
     </header>
 
-
     <main>
       <nav class="tabs">
-        <button class="tab-btn active" onclick="switchTab(event, 'equipment')">
-          Rental Equipment
+        <button class="tab-btn active" onclick="switchTab(event, 'inventory')">
+          Inventory Stock
         </button>
-        <button class="tab-btn" onclick="switchTab(event, 'rates')">
-          Rental Rates
+        <button
+          class="tab-btn"
+          onclick="switchTab(event, 'product-ingredients')"
+        >
+          Product Recipes
         </button>
-        <button class="tab-btn" onclick="switchTab(event, 'rentals')">
-          Active Rentals
+        <button class="tab-btn" onclick="switchTab(event, 'low-stock')">
+          Low Stock Items
+        </button>
+        <button class="tab-btn" onclick="switchTab(event, 'stock-alerts')">
+          Stock Alerts Log
         </button>
       </nav>
 
-
       <section class="content-card">
         <div class="action-bar">
-          <h3 id="sectionTitle">Rental Equipment Directory</h3>
-          <button class="btn-primary" onclick="openCreateModal()">
+          <h3 id="sectionTitle">Inventory Items Directory</h3>
+          <button class="btn-primary" id="addBtn" onclick="openCreateModal()">
             + Add New
           </button>
         </div>
@@ -304,7 +310,6 @@
         </div>
       </section>
     </main>
-
 
     <div class="modal-backdrop" id="modalBackdrop">
       <div class="modal">
@@ -331,13 +336,11 @@
       </div>
     </div>
 
-
     <script>
-      const API_BASE = "http://localhost:3000/api/audit";
-      let currentTab = "equipment";
+      const API_BASE = "http://localhost:3000/api";
+      let currentTab = "inventory";
       let editingId = null;
       let currentUser = null;
-
 
       document.addEventListener("DOMContentLoaded", () => {
         const userData =
@@ -352,13 +355,11 @@
         loadTabData();
       });
 
-
       document.getElementById("logoutBtn").addEventListener("click", () => {
         localStorage.removeItem("user");
         sessionStorage.removeItem("user");
         window.location.href = "login.html";
       });
-
 
       function switchTab(evt, tab) {
         currentTab = tab;
@@ -367,108 +368,118 @@
           .forEach((b) => b.classList.remove("active"));
         if (evt && evt.target) evt.target.classList.add("active");
 
-
         const titles = {
-          equipment: "Rental Equipment Directory",
-          rates: "Rental Rates Configuration",
-          rentals: "Equipment Rental Logs",
+          inventory: "Inventory Stock Items",
+          "product-ingredients": "Product Ingredient Recipes",
+          "low-stock": "Low Stock Items",
+          "stock-alerts": "Stock Alert Records",
         };
         document.getElementById("sectionTitle").textContent =
-          titles[tab] || "Audit & Rentals";
+          titles[tab] || "Stock Management";
+        document.getElementById("addBtn").style.display =
+          tab === "low-stock" || tab === "stock-alerts" ? "none" : "block";
         loadTabData();
       }
 
-
       async function loadTabData() {
         const tbody = document.getElementById("tableBody");
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Loading audit data...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading data...</td></tr>`;
 
+        let requestUrl = `${API_BASE}/${currentTab}`;
+        if (currentTab === "low-stock") {
+          requestUrl = `${API_BASE}/low-stock`;
+        } else if (currentTab === "stock-alerts") {
+          requestUrl = `${API_BASE}/stock-alerts`;
+        }
 
         try {
-          const res = await fetch(`${API_BASE}/${currentTab}`);
+          const res = await fetch(requestUrl);
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
             throw new Error(
               errData.error ||
                 errData.message ||
-                `Server returned status ${res.status}`,
+                `HTTP ${res.status}: Failed to fetch data`,
             );
           }
           const data = await res.json();
           renderTable(data);
         } catch (err) {
-          tbody.innerHTML = `<tr><td colspan="8" style="color:var(--danger); text-align:center;">${err.message}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); text-align:center;">${err.message}</td></tr>`;
         }
       }
-
 
       function renderTable(data) {
         const tbody = document.getElementById("tableBody");
         const thead = document.getElementById("tableHead");
         tbody.innerHTML = "";
 
-
         if (!Array.isArray(data) || data.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No records found.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No records found.</td></tr>`;
           return;
         }
 
-
-        if (currentTab === "equipment") {
-          thead.innerHTML = `<tr><th>Equipment ID</th><th>Name</th><th>Type</th><th>Status</th><th>Actions</th></tr>`;
+        if (currentTab === "inventory") {
+          thead.innerHTML = `<tr><th>ID</th><th>Item Name</th><th>Unit</th><th>Stock On Hand</th><th>Reorder Level</th><th>Status</th><th>Actions</th></tr>`;
           data.forEach((item) => {
-            const isAvail = item.status === "Available";
+            const isLow =
+              (item.quantity_on_hand ?? item.quantity) <= item.reorder_level;
             tbody.innerHTML += `
               <tr>
-                <td><strong>#${item.equipment_id}</strong></td>
-                <td><strong>${item.equipment_name}</strong></td>
-                <td>${item.equipment_type || "-"}</td>
-                <td><span class="badge ${isAvail ? "success" : "warning"}">${item.status}</span></td>
+                <td><strong>#${item.inventory_id || item.id}</strong></td>
+                <td><strong>${item.item_name || item.name}</strong></td>
+                <td>${item.unit || "-"}</td>
+                <td>${item.quantity_on_hand ?? item.quantity}</td>
+                <td>${item.reorder_level || 0}</td>
+                <td><span class="badge ${isLow ? "danger" : "success"}">${isLow ? "Low Stock" : "Sufficient"}</span></td>
                 <td>
-                  <button class="btn-sm edit" onclick="openEditModal(${item.equipment_id})">Edit</button>
-                  <button class="btn-sm delete" onclick="deleteRecord(${item.equipment_id})">Delete</button>
+                  <button class="btn-sm edit" onclick="openEditModal(${item.inventory_id || item.id})">Edit</button>
+                  <button class="btn-sm delete" onclick="deleteRecord(${item.inventory_id || item.id})">Delete</button>
                 </td>
               </tr>`;
           });
-        } else if (currentTab === "rates") {
-          thead.innerHTML = `<tr><th>Rate ID</th><th>Equipment</th><th>Rate Amount</th><th>Billing Unit</th><th>Effective Date</th><th>Actions</th></tr>`;
+        } else if (currentTab === "product-ingredients") {
+          thead.innerHTML = `<tr><th>Recipe ID</th><th>Product ID</th><th>Inventory Item ID</th><th>Required Quantity</th><th>Actions</th></tr>`;
           data.forEach((item) => {
             tbody.innerHTML += `
               <tr>
-                <td><strong>#${item.rate_id}</strong></td>
-                <td>${item.equipment_name || `Equipment #${item.equipment_id}`}</td>
-                <td>₱${parseFloat(item.rate_amount || 0).toFixed(2)}</td>
-                <td>${item.billing_unit}</td>
-                <td>${item.effective_date ? new Date(item.effective_date).toLocaleDateString() : "-"}</td>
+                <td><strong>#${item.recipe_id}</strong></td>
+                <td>Product #${item.product_id}</td>
+                <td>Inventory Item #${item.inventory_id}</td>
+                <td>${item.quantity_required}</td>
                 <td>
-                  <button class="btn-sm edit" onclick="openEditModal(${item.rate_id})">Edit</button>
-                  <button class="btn-sm delete" onclick="deleteRecord(${item.rate_id})">Delete</button>
+                  <button class="btn-sm edit" onclick="openEditModal(${item.recipe_id})">Edit</button>
+                  <button class="btn-sm delete" onclick="deleteRecord(${item.recipe_id})">Delete</button>
                 </td>
               </tr>`;
           });
-        } else if (currentTab === "rentals") {
-          thead.innerHTML = `<tr><th>Rental ID</th><th>Customer</th><th>User</th><th>Equipment</th><th>Total Amount</th><th>Status</th><th>Start Time</th><th>End Time</th><th>Actions</th></tr>`;
+        } else if (currentTab === "low-stock") {
+          thead.innerHTML = `<tr><th>Item ID</th><th>Item Name</th><th>Current Quantity</th><th>Reorder Level</th><th>Status</th></tr>`;
           data.forEach((item) => {
-            const isActive = item.status === "Active";
             tbody.innerHTML += `
               <tr>
-                <td><strong>#${item.rental_id}</strong></td>
-                <td>${item.customer_name || `Customer #${item.customer_id}`}</td>
-                <td>${item.username || `User #${item.user_id}`}</td>
-                <td>${item.equipment_name || `Equipment #${item.equipment_id}`}</td>
-                <td>₱${parseFloat(item.total_amount || 0).toFixed(2)}</td>
-                <td><span class="badge ${isActive ? "success" : "warning"}">${item.status}</span></td>
-                <td>${item.start_time ? new Date(item.start_time).toLocaleString() : "-"}</td>
-                <td>${item.end_time ? new Date(item.end_time).toLocaleString() : "-"}</td>
-                <td>
-                  <button class="btn-sm edit" onclick="openEditModal(${item.rental_id})">Edit</button>
-                  <button class="btn-sm delete" onclick="deleteRecord(${item.rental_id})">Delete</button>
-                </td>
+                <td><strong>#${item.inventory_id || item.id}</strong></td>
+                <td><strong>${item.item_name || item.name}</strong></td>
+                <td><span class="badge danger">${item.quantity_on_hand ?? item.quantity} ${item.unit || ""}</span></td>
+                <td>${item.reorder_level || 0}</td>
+                <td><span class="badge danger">LOW STOCK</span></td>
+              </tr>`;
+          });
+        } else if (currentTab === "stock-alerts") {
+          thead.innerHTML = `<tr><th>Alert ID</th><th>Item ID</th><th>Item Name</th><th>Alert Date</th><th>Message</th><th>Status</th></tr>`;
+          data.forEach((item) => {
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>#${item.alert_id}</strong></td>
+                <td>#${item.inventory_id}</td>
+                <td><strong>${item.item_name || "N/A"}</strong></td>
+                <td>${item.alert_date ? new Date(item.alert_date).toLocaleString() : "-"}</td>
+                <td>${item.alert_message || "Stock threshold reached"}</td>
+                <td><span class="badge warning">${item.alert_status || "Active"}</span></td>
               </tr>`;
           });
         }
       }
-
 
       async function openCreateModal() {
         editingId = null;
@@ -476,7 +487,6 @@
         await buildModalFields({});
         document.getElementById("modalBackdrop").classList.add("show");
       }
-
 
       async function openEditModal(id) {
         editingId = id;
@@ -487,179 +497,82 @@
           await buildModalFields(item);
           document.getElementById("modalBackdrop").classList.add("show");
         } catch (err) {
-          alert("Failed to fetch record details");
+          alert("Failed to retrieve record");
         }
       }
-
 
       async function buildModalFields(data) {
         const container = document.getElementById("modalFields");
 
-
-        if (currentTab === "equipment") {
+        if (currentTab === "inventory") {
           container.innerHTML = `
             <div class="form-group">
-              <label>Equipment Name *</label>
-              <input type="text" id="equipment_name" value="${data.equipment_name || ""}" required />
+              <label>Item Name *</label>
+              <input type="text" id="item_name" value="${data.item_name || data.name || ""}" required />
             </div>
             <div class="form-group">
-              <label>Equipment Type</label>
-              <input type="text" id="equipment_type" value="${data.equipment_type || ""}" />
+              <label>Unit (e.g. kg, pcs, ml)</label>
+              <input type="text" id="unit" value="${data.unit || ""}" />
             </div>
             <div class="form-group">
-              <label>Status</label>
-              <select id="status">
-                <option value="Available" ${data.status === "Available" ? "selected" : ""}>Available</option>
-                <option value="Rented" ${data.status === "Rented" ? "selected" : ""}>Rented</option>
-                <option value="Maintenance" ${data.status === "Maintenance" ? "selected" : ""}>Maintenance</option>
-              </select>
+              <label>Quantity On Hand</label>
+              <input type="number" id="quantity_on_hand" value="${data.quantity_on_hand ?? data.quantity ?? 0}" />
+            </div>
+            <div class="form-group">
+              <label>Reorder Level</label>
+              <input type="number" id="reorder_level" value="${data.reorder_level ?? 0}" />
             </div>`;
-        } else if (currentTab === "rates") {
-          container.innerHTML = `<p style="text-align:center;">Loading equipment...</p>`;
+        } else if (currentTab === "product-ingredients") {
+          container.innerHTML = `<p style="text-align:center;">Loading options...</p>`;
+
           try {
-            const res = await fetch(`${API_BASE}/equipment`);
-            const equipmentList = await res.json();
-            let options = (Array.isArray(equipmentList) ? equipmentList : [])
+            let productsRes = await fetch(`${API_BASE}/master-data/products`);
+            if (!productsRes.ok) {
+              productsRes = await fetch(`${API_BASE}/master-data/products`);
+            }
+            const inventoryRes = await fetch(`${API_BASE}/inventory`);
+
+            const products = await productsRes.json();
+            const inventory = await inventoryRes.json();
+
+            let productOptions = (Array.isArray(products) ? products : [])
               .map(
-                (e) =>
-                  `<option value="${e.equipment_id}" ${data.equipment_id === e.equipment_id ? "selected" : ""}>${e.equipment_name} (#${e.equipment_id})</option>`,
+                (p) =>
+                  `<option value="${p.product_id}" ${data.product_id === p.product_id ? "selected" : ""}>${p.product_name || p.name} (#${p.product_id})</option>`,
               )
               .join("");
 
+            let inventoryOptions = (Array.isArray(inventory) ? inventory : [])
+              .map(
+                (i) =>
+                  `<option value="${i.inventory_id}" ${data.inventory_id === i.inventory_id ? "selected" : ""}>${i.item_name} (#${i.inventory_id})</option>`,
+              )
+              .join("");
 
             container.innerHTML = `
               <div class="form-group">
-                <label>Equipment *</label>
-                <select id="equipment_id" required>
-                  <option value="">-- Select Equipment --</option>
-                  ${options}
+                <label>Product *</label>
+                <select id="product_id" required>
+                  <option value="">-- Select Product --</option>
+                  ${productOptions}
                 </select>
               </div>
               <div class="form-group">
-                <label>Rate Amount (₱) *</label>
-                <input type="number" step="0.01" id="rate_amount" value="${data.rate_amount || ""}" required />
-              </div>
-              <div class="form-group">
-                <label>Billing Unit *</label>
-                <select id="billing_unit">
-                  <option value="Hourly" ${data.billing_unit === "Hourly" ? "selected" : ""}>Hourly</option>
-                  <option value="Daily" ${data.billing_unit === "Daily" ? "selected" : ""}>Daily</option>
+                <label>Inventory Item *</label>
+                <select id="inventory_id" required>
+                  <option value="">-- Select Item --</option>
+                  ${inventoryOptions}
                 </select>
               </div>
               <div class="form-group">
-                <label>Effective Date *</label>
-                <input type="date" id="effective_date" value="${data.effective_date ? data.effective_date.split("T")[0] : ""}" required />
+                <label>Quantity Required *</label>
+                <input type="number" step="0.01" id="quantity_required" value="${data.quantity_required || ""}" required />
               </div>`;
           } catch (err) {
-            container.innerHTML = `<p style="color:var(--danger)">Failed to load equipment list</p>`;
+            container.innerHTML = `<p style="color:var(--danger); text-align:center;">Failed to load options</p>`;
           }
-        } else if (currentTab === "rentals") {
-          container.innerHTML = `<p style="text-align:center;">Loading options...</p>`;
-
-
-          const safeFetch = async (url) => {
-            try {
-              const res = await fetch(url);
-              if (!res.ok) return [];
-              return await res.json();
-            } catch (e) {
-              return [];
-            }
-          };
-
-
-          const [customerList, eqList, rateList] = await Promise.all([
-            safeFetch("http://localhost:3000/api/master-data/customers"),
-            safeFetch(`${API_BASE}/equipment`),
-            safeFetch(`${API_BASE}/rates`),
-          ]);
-
-
-          let customerOptions = (
-            Array.isArray(customerList) ? customerList : []
-          )
-            .map(
-              (c) =>
-                `<option value="${c.customer_id}" ${data.customer_id == c.customer_id ? "selected" : ""}>${c.customer_name} (ID: ${c.customer_id})</option>`,
-            )
-            .join("");
-
-
-          let eqOptions = (Array.isArray(eqList) ? eqList : [])
-            .map(
-              (e) =>
-                `<option value="${e.equipment_id}" ${data.equipment_id == e.equipment_id ? "selected" : ""}>${e.equipment_name} (#${e.equipment_id}) [${e.status}]</option>`,
-            )
-            .join("");
-
-
-          let rateOptions = (Array.isArray(rateList) ? rateList : [])
-            .map(
-              (r) =>
-                `<option value="${r.rate_id}" ${data.rate_id == r.rate_id ? "selected" : ""}>Rate #${r.rate_id} (₱${r.rate_amount}/${r.billing_unit})</option>`,
-            )
-            .join("");
-
-
-          const toLocalISO = (dateStr) => {
-            const d = dateStr ? new Date(dateStr) : new Date();
-            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-            return d.toISOString().slice(0, 16);
-          };
-
-
-          const startVal = toLocalISO(data.start_time);
-          const endVal = data.end_time ? toLocalISO(data.end_time) : "";
-
-
-          container.innerHTML = `
-            <div class="form-group">
-              <label>Customer *</label>
-              <select id="customer_id" required>
-                <option value="">-- Select Customer --</option>
-                ${customerOptions}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>User ID *</label>
-              <input type="number" id="user_id" value="${data.user_id || currentUser.user_id || 1}" required />
-            </div>
-            <div class="form-group">
-              <label>Equipment *</label>
-              <select id="equipment_id" required>
-                <option value="">-- Select Equipment --</option>
-                ${eqOptions}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Rate *</label>
-              <select id="rate_id" required>
-                <option value="">-- Select Rate --</option>
-                ${rateOptions}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Start Time *</label>
-              <input type="datetime-local" id="start_time" value="${startVal}" required />
-            </div>
-            <div class="form-group">
-              <label>End Time</label>
-              <input type="datetime-local" id="end_time" value="${endVal}" />
-            </div>
-            <div class="form-group">
-              <label>Total Amount (₱)</label>
-              <input type="number" step="0.01" id="total_amount" value="${data.total_amount || 0}" />
-            </div>
-            <div class="form-group">
-              <label>Status</label>
-              <select id="status">
-                <option value="Active" ${data.status === "Active" ? "selected" : ""}>Active</option>
-                <option value="Completed" ${data.status === "Completed" ? "selected" : ""}>Completed</option>
-              </select>
-            </div>`;
         }
       }
-
 
       document
         .getElementById("modalForm")
@@ -667,57 +580,32 @@
           e.preventDefault();
           let payload = {};
 
-
-          if (currentTab === "equipment") {
+          if (currentTab === "inventory") {
             payload = {
-              equipment_name: document.getElementById("equipment_name").value,
-              equipment_type: document.getElementById("equipment_type").value,
-              status: document.getElementById("status").value,
+              item_name: document.getElementById("item_name").value,
+              unit: document.getElementById("unit").value,
+              quantity_on_hand:
+                parseFloat(document.getElementById("quantity_on_hand").value) ||
+                0,
+              reorder_level:
+                parseFloat(document.getElementById("reorder_level").value) || 0,
             };
-          } else if (currentTab === "rates") {
+          } else if (currentTab === "product-ingredients") {
             payload = {
-              equipment_id: parseInt(
-                document.getElementById("equipment_id").value,
+              product_id: parseInt(document.getElementById("product_id").value),
+              inventory_id: parseInt(
+                document.getElementById("inventory_id").value,
               ),
-              rate_amount: parseFloat(
-                document.getElementById("rate_amount").value,
+              quantity_required: parseFloat(
+                document.getElementById("quantity_required").value,
               ),
-              billing_unit: document.getElementById("billing_unit").value,
-              effective_date: document.getElementById("effective_date").value,
-            };
-          } else if (currentTab === "rentals") {
-            const customerIdVal = document.getElementById("customer_id").value;
-            if (!customerIdVal) {
-              alert("Please select a valid customer.");
-              return;
-            }
-            const startTimeVal = document.getElementById("start_time").value;
-            const endTimeVal = document.getElementById("end_time").value;
-            payload = {
-              customer_id: parseInt(customerIdVal),
-              user_id: parseInt(document.getElementById("user_id").value),
-              equipment_id: parseInt(
-                document.getElementById("equipment_id").value,
-              ),
-              rate_id: parseInt(document.getElementById("rate_id").value),
-              total_amount:
-                parseFloat(document.getElementById("total_amount").value) || 0,
-              status: document.getElementById("status").value,
-              start_time: startTimeVal
-                ? startTimeVal.replace("T", " ") + ":00"
-                : null,
-              end_time: endTimeVal
-                ? endTimeVal.replace("T", " ") + ":00"
-                : null,
             };
           }
-
 
           const method = editingId ? "PUT" : "POST";
           const url = editingId
             ? `${API_BASE}/${currentTab}/${editingId}`
             : `${API_BASE}/${currentTab}`;
-
 
           try {
             const res = await fetch(url, {
@@ -731,14 +619,12 @@
                 result.message || result.error || "Save operation failed",
               );
 
-
             closeModal();
             loadTabData();
           } catch (err) {
             alert(err.message);
           }
         });
-
 
       async function deleteRecord(id) {
         if (!confirm("Are you sure you want to delete this record?")) return;
@@ -756,7 +642,6 @@
           alert(err.message);
         }
       }
-
 
       function closeModal() {
         document.getElementById("modalBackdrop").classList.remove("show");
